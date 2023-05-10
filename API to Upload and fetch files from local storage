@@ -1,0 +1,52 @@
+import org.springframework.util.StringUtils;
+import java.nio.file.*;
+
+@RestController
+public class DocumentController {
+
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadDocument(@RequestParam("file") MultipartFile file) {
+        try {
+            String fileName = StringUtils.cleanPath(file.getOriginalFilename());  
+         // String fileName = "new_filename.pdf";    // if you want to change file name 
+            Path uploadPath = Paths.get("C:/Documents/Uploaded");
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            return ResponseEntity.ok("File uploaded successfully.");
+        } catch (IOException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading file: " + ex.getMessage());
+        }
+    }
+
+
+
+    import java.io.File;
+    import java.net.URLConnection;
+
+    private final String UPLOAD_DIR = "C:/Documents/Uploaded";
+    @GetMapping("/get-file")
+    public ResponseEntity<Object> getFile(@RequestParam("file-name") String fileName) {
+        try {
+            Path filePath = Paths.get(UPLOAD_DIR, fileName);
+            Resource resource = new UrlResource(filePath.toUri());         
+            File file = new File(fileName);
+            URLConnection connection = file.toURL().openConnection();
+            String contentType =  connection.getContentType();
+            
+            if (resource.exists()) {
+                return ResponseEntity.ok()
+                        .contentLength(resource.contentLength())
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .header("content-Disposition", "attachment; filename=\"" + fileName + "\"")     // .header("content-Disposition", "attachment; filename=" + fileName)
+                        .body(resource);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("file not found");
+            }
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("fail to fetch file");
+        }
+    }
+ }
