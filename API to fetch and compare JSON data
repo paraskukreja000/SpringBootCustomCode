@@ -1,0 +1,44 @@
+-> API to fetch and compare JSON data from two different databases and show different, common and missing data in table format.
+
+String db1Url = {DB-URL};
+String db1UserName = {username};
+String db1Password = {password};
+
+String db2Url = {DB-URL};
+String db2UserName = {username};
+String db2Password = {password};
+
+Connection db1 = DriverManager.getConnection(db1Url, db1UserName, db1Password);
+Connection db2 = DriverManager.getConnection(db2Url, db2UserName, db2Password);
+
+--> to create sql query to select data to compare
+Statement statement1 = db1.createStatement();
+ResultSet result1 = statement1.executeQuery("SELECT REQUEST_DATA FROM {table} WHERE {condition});
+
+Statement statement2 = db1.createStatement();
+ResultSet result2 = statement1.executeQuery("SELECT REQUEST_DATA FROM {table} WHERE {condition});
+
+StringBuilder stringBuilder = new StringBuilder();
+if(result1.next() && result2.next()){
+  JSONParser parser = new JSONParser();
+  JSONObject Json1 = (JSONObject) parser.parse(result1.getString("REQUEST_DATA"));
+  JSONObject Json2 = (JSONObject) parser.parse(result2.getString("REQUEST_DATA"));
+  
+  Map<String, Object> jsonFlatMap1 = FlatMapUtil.flatten(Json1);
+  Map<String, Object> jsonFlatMap2 = FlatMapUtil.flatten(Json2);
+  
+  MapDifference<String, Object> difference = Maps.difference(jsonFlatMap1, jsonFlatMap2);
+  
+  -->to show data in table format in result
+ stringBuilder.append("<h2>Entries only on left</h2>");
+ difference.entriesOnlyOnLeft().forEach((key, value) -> stringBuilder.append("<tr><td>"+ key + "</td></td>" + value + "</td><td></td><tr>"));
+ 
+ stringBuilder.append("<h2>Entries only on right</h2>");
+ difference.entriesOnlyOnRight().forEach((key, value) -> stringBuilder.append("<tr><td>"+ key + "</td></td></td><td>" + value + "</td><tr>"));
+ 
+ stringBuilder.append("<h2>Entries with different values</h2>");
+ difference.entriesDiffering().forEach((key, value) -> stringBuilder.append("<tr><td>"+ key + "</td></td>" + value.leftValue() + "</td></td>" + value.rightValue() + "</td><tr>"));
+ 
+ stringBuilder.append("<h2>Entries with common values</h2>");
+ difference.entriesInCommon().forEach((key, value) -> stringBuilder.append("<tr><td>"+ key + "</td></td>" + value + "</td><tr>"));
+}
