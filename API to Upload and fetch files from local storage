@@ -1,3 +1,7 @@
+-> In upload API you can upload any type of file like pdf, jpg, CSV, etc.
+-> In fetch API you have to give the full file name (with extension) to find that file and that file is visible in the postman response also
+
+
 import org.springframework.util.StringUtils;
 import java.nio.file.*;
 
